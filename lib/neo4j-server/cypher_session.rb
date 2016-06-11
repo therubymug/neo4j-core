@@ -24,15 +24,12 @@ module Neo4j
       # @see https://github.com/lostisland/faraday
       def self.create_connection(params, url = nil)
         init_params = params[:initialize] && params.delete(:initialize)
+        custom_adapter = init_params.present? && init_params.delete(:adapter)
         conn = Faraday.new(url, init_params) do |b|
           b.request :basic_auth, params[:basic_auth][:username], params[:basic_auth][:password] if params[:basic_auth]
           b.request :multi_json
-          # b.response :logger
-
           b.response :multi_json, symbolize_keys: true, content_type: 'application/json'
-          # b.use Faraday::Response::RaiseError
-          b.use Faraday::Adapter::NetHttpPersistent
-          # b.adapter  Faraday.default_adapter
+          b.use custom_adapter || Faraday::Adapter::NetHttpPersistent
         end
         conn.headers = {'Content-Type' => 'application/json', 'User-Agent' => ::Neo4j::Session.user_agent_string}
         conn
